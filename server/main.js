@@ -3,12 +3,20 @@ import path from 'path';
 
 import webpack from 'webpack';
 import WebpackDevServer from 'webpack-dev-server';
-
+import api from './routes';
 const app = express();
 const port = 3000;
 const devPort = 4000;
 
 app.use('/', express.static(path.join(__dirname, './../public')));
+
+/* setup routers & static directory */
+app.use('/api', api);
+
+/* support client-side routing */
+app.get('*', (req, res) => {
+    res.sendFile(path.resolve(__dirname, './../public/index.html'));
+});
 
 app.get('/hello', (req, res) => {
     return res.send('Hello CodeLab');
