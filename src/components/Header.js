@@ -4,15 +4,15 @@ import {NavLink} from 'react-router-dom'
 class Header extends React.Component {
     render() {
         const loginButton = (<li>
-            <a>
+            <NavLink to ="/login">
                 <i className="material-icons">vpn_key</i>
-            </a>
+            </NavLink>
         </li>);
 
         const logoutButton = (<li>
-            <a>
+            <NavLink to ="/logout">
             <i className="material-icons">lock_open</i>
-            </a>
+            </NavLink>
         </li>);
         
         return (
