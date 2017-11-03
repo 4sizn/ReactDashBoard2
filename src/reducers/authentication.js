@@ -5,6 +5,11 @@ const initState = {
     login : {
         status : 'INIT'
     },
+    register : {
+        status : 'INIT',
+        error : -1
+    }
+    ,
     status : {
         isLoggedIn : false,
         currentUser : '',
@@ -39,6 +44,25 @@ export default function authentication(state, action) {
                 status : "FAILURE"
             }
         }
+        case types.AUTH_REGISTER:
+        return{
+            register:{
+                status : "WAITING"
+            }
+        }
+        case types.AUTH_REGISTER_SUCCESS:
+            return{
+                register:{
+                    status : "SUCCESS"
+                }
+            }
+        case types.AUTH_REGISTER_FAILURE:
+            return{
+                register:{
+                    status : "FAILURE",
+                    error : action.error
+                }
+            }
         default:
         return state;   
 

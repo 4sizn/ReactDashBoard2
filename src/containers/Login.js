@@ -22,7 +22,7 @@ class Login extends Component {
                     document.cookie = 'key=' + btoa(JSON.stringify(loginData));
 
                     Materialize.toast('Welcome, ' + id + '!', 2000);
-                    browserHistory.push('/');
+                    this.props.history.push('/');
                     return true;
                 } else {
                     let $toastContent = $('<span style="color: #FFB4BA">Incorrect username or password</span>');
