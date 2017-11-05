@@ -1,130 +1,195 @@
 import express from 'express';
-import Account from '../models/account';
+import Memo from '../models/memo';
+import mongoose from 'mongoose';
 
 const router = express.Router();
 
 /*
-    ACCOUNT SIGNUP: POST /api/account/signup
-    BODY SAMPLE: { "username": "test", "password": "test" }
-    ERROR CODES:
-        1: BAD USERNAME
-        2: BAD PASSWORD
-        3: USERNAM EXISTS
+    WRITE MEMO: POST /api/memo
+    BODY SAMPLE: { contents: "sample "}
+    ERROR CODES
+        1: NOT LOGGED IN
+        2: EMPTY CONTENTS
 */
-router.post('/signup', (req, res) => {
-    // CHECK USERNAME FORMAT
-    let usernameRegex = /^[a-z0-9]+$/;
-
-    if(!usernameRegex.test(req.body.username)) {
-        return res.status(400).json({
-            error: "BAD USERNAME",
+router.post('/', (req, res) => {
+    // CHECK LOGIN STATUS
+    if(typeof req.session.loginInfo === 'undefined') {
+        return res.status(403).json({
+            error: "NOT LOGGED IN",
             code: 1
         });
     }
 
-    // CHECK PASS LENGTH
-    if(req.body.password.length < 4 || typeof req.body.password !== "string") {
+    // CHECK CONTENTS VALID
+    if(typeof req.body.contents !== 'string') {
         return res.status(400).json({
-            error: "BAD PASSWORD",
+            error: "EMPTY CONTENTS",
             code: 2
         });
     }
 
-    // CHECK USER EXISTANCE
-    Account.findOne({ username: req.body.username }, (err, exists) => {
-        if (err) throw err;
-        if(exists){
-            return res.status(409).json({
-                error: "USERNAME EXISTS",
-                code: 3
-            });
-        }
-
-        // CREATE ACCOUNT
-        let account = new Account({
-            username: req.body.username,
-            password: req.body.password
+    if(req.body.contents === "") {
+        return res.status(400).json({
+            error: "EMPTY CONTENTS",
+            code: 2
         });
+    }
 
-        account.password = account.generateHash(account.password);
+    // CREATE NEW MEMO
+    let memo = new Memo({
+        writer: req.session.loginInfo.username,
+        contents: req.body.contents
+    });
 
-        // SAVE IN THE DATABASE
-        account.save( err => {
-            if(err) throw err;
-            return res.json({ success: true });
-        });
-
+    // SAVE IN DATABASE
+    memo.save( err => {
+        if(err) throw err;
+        return res.json({ success: true });
     });
 });
 
 /*
-    ACCOUNT SIGNIN: POST /api/account/signin
-    BODY SAMPLE: { "username": "test", "password": "test" }
-    ERROR CODES:
-        1: LOGIN FAILED
+    MODIFY MEMO: PUT /api/memo/:id
+    BODY SAMPLE: { contents: "sample "}
+    ERROR CODES
+        1: INVALID ID,
+        2: EMPTY CONTENTS
+        3: NOT LOGGED IN
+        4: NO RESOURCE
+        5: PERMISSION FAILURE
 */
-router.post('/signin', (req, res) => {
+router.put('/:id', (req, res) => {
 
-    if(typeof req.body.password !== "string") {
-        return res.status(401).json({
-            error: "LOGIN FAILED",
+    // CHECK MEMO ID VALIDITY
+    if(!mongoose.Types.ObjectId.isValid(req.params.id)) {
+        return res.status(400).json({
+            error: "INVALID ID",
             code: 1
         });
     }
 
-    // FIND THE USER BY USERNAME
-    Account.findOne({ username: req.body.username}, (err, account) => {
+    // CHECK CONTENTS VALID
+    if(typeof req.body.contents !== 'string') {
+        return res.status(400).json({
+            error: "EMPTY CONTENTS",
+            code: 2
+        });
+    }
+
+    if(req.body.contents === "") {
+        return res.status(400).json({
+            error: "EMPTY CONTENTS",
+            code: 2
+        });
+    }
+
+    // CHECK LOGIN STATUS
+    if(typeof req.session.loginInfo === 'undefined') {
+        return res.status(403).json({
+            error: "NOT LOGGED IN",
+            code: 3
+        });
+    }
+
+    // FIND MEMO
+    Memo.findById(req.params.id, (err, memo) => {
         if(err) throw err;
 
-        // CHECK ACCOUNT EXISTANCY
-        if(!account) {
-            return res.status(401).json({
-                error: "LOGIN FAILED",
-                code: 1
+        // IF MEMO DOES NOT EXIST
+        if(!memo) {
+            return res.status(404).json({
+                error: "NO RESOURCE",
+                code: 4
             });
         }
 
-        // CHECK WHETHER THE PASSWORD IS VALID
-        if(!account.validateHash(req.body.password)) {
-            return res.status(401).json({
-                error: "LOGIN FAILED",
-                code: 1
+        // IF EXISTS, CHECK WRITER
+        if(memo.writer != req.session.loginInfo.username) {
+            return res.status(403).json({
+                error: "PERMISSION FAILURE",
+                code: 5
             });
         }
 
-        // ALTER SESSION
-        let session = req.session;
-        session.loginInfo = {
-            _id: account._id,
-            username: account.username
-        };
+        // MODIFY AND SAVE IN DATABASE
+        memo.contents = req.body.contents;
+        memo.date.edited = new Date();
+        memo.is_edited = true;
 
-        // RETURN SUCCESS
-        return res.json({
-            success: true
+        memo.save((err, memo) => {
+            if(err) throw err;
+            return res.json({
+                success: true,
+                memo
+            });
         });
+
     });
 });
 
 /*
-    GET CURRENT USER INFO GET /api/account/getInfo
+    DELETE MEMO: DELETE /api/memo/:id
+    ERROR CODES
+        1: INVALID ID
+        2: NOT LOGGED IN
+        3: NO RESOURCE
+        4: PERMISSION FAILURE
 */
-router.get('/getinfo', (req, res) => {
-    if(typeof req.session.loginInfo === "undefined") {
-        return res.status(401).json({
-            error: 1
+router.delete('/:id', (req, res) => {
+
+    // CHECK MEMO ID VALIDITY
+    if(!mongoose.Types.ObjectId.isValid(req.params.id)) {
+        return res.status(400).json({
+            error: "INVALID ID",
+            code: 1
         });
     }
 
-    res.json({ info: req.session.loginInfo });
+    // CHECK LOGIN STATUS
+    if(typeof req.session.loginInfo === 'undefined') {
+        return res.status(403).json({
+            error: "NOT LOGGED IN",
+            code: 2
+        });
+    }
+
+    // FIND MEMO AND CHECK FOR WRITER
+    Memo.findById(req.params.id, (err, memo) => {
+        if(err) throw err;
+
+        if(!memo) {
+            return res.status(404).json({
+                error: "NO RESOURCE",
+                code: 3
+            });
+        }
+        if(memo.writer != req.session.loginInfo.username) {
+            return res.status(403).json({
+                error: "PERMISSION FAILURE",
+                code: 4
+            });
+        }
+
+        // REMOVE THE MEMO
+        Memo.remove({ _id: req.params.id }, err => {
+            if(err) throw err;
+            res.json({ success: true });
+        });
+    });
+
 });
 
 /*
-    LOGOUT: POST /api/account/logout
+    READ MEMO: GET /api/memo
 */
-router.post('/logout', (req, res) => {
-    req.session.destroy(err => { if(err) throw err; });
-    return res.json({ sucess: true });
+router.get('/', (req, res) => {
+    Memo.find()
+    .sort({"_id": -1})
+    .limit(6)
+    .exec((err, memos) => {
+        if(err) throw err;
+        res.json(memos);
+    });
 });
 
 export default router;

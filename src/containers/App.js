@@ -9,7 +9,6 @@ import {createStore, applyMiddleware} from 'redux';
 import reducers from 'reducers';
 import thunk from 'redux-thunk'; //비동기 처리 미들웨어 - AJAX와 별도 action 구현
 
-
 const store = createStore(reducers, applyMiddleware(thunk));     
 class App extends React.Component {
     render(){

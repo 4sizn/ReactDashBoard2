@@ -1,5 +1,6 @@
 import React from 'react';
 import {NavLink} from 'react-router-dom';
+import {PropTypes} from 'prop-types';
 
 class Header extends React.Component {
     render() {
@@ -36,8 +37,8 @@ class Header extends React.Component {
 }
 
 Header.propTypes = {
-    isLoggedIn:React.PropTypes.bool,
-    onLogout:React.PropTypes.func
+    isLoggedIn:PropTypes.bool,
+    onLogout:PropTypes.func
 }
 
 Header.defaultProps = {

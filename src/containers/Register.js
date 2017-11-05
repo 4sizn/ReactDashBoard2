@@ -4,8 +4,6 @@ import {connect} from 'react-redux';
 import {registerRequest} from '../actions/authentication';
 
 
-//TODO: error! username 오류 수정하기
-
 class Register extends Component {
     constructor(props){
         super(props);

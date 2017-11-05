@@ -29,6 +29,7 @@ export default function authentication(state, action) {
                 }
             }
         case types.AUTH_LOGIN_SUCCESS:
+        console.log("Auth_login_success");
             return {
                 login : {
                     status : "SUCCESS"
