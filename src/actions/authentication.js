@@ -64,7 +64,6 @@ export function logout(){
 
 
 export function registerRequest(username, password) {
-    console.log(username, password);
     return (dispatch) => {
         dispatch(register());
 
