@@ -4,7 +4,7 @@ import ReactCSSTransitionGroup from 'react-addons-css-transition-group';
 
 class MemoList extends React.Component {
     render() {
-
+        console.log('memolist rendering');
         const mapToComponents = data => {
             return data.map((memo, i) => {
                 return (
@@ -33,6 +33,13 @@ class MemoList extends React.Component {
             </div>
         );
     }
+
+    //state나 props가 update가 될때 reRendering을 할지 말지 선택하는 함수
+    shouldComponentUpdate(nextProps, nextState) {
+        let update = JSON.stringify(this.props) !== JSON.stringify(nextProps);
+        return update;
+    }
+    
 }
 
 MemoList.propTypes = {

@@ -69,8 +69,24 @@ class Memo extends React.Component {
         this.props.onStar(id, index);
     }
 
-    render() {
+     shouldComponentUpdate(nextProps, nextState) {
+        let current = {
+            props: this.props,
+            state: this.state
+        };
+        
+        let next = {
+            props: nextProps,
+            state: nextState
+        };
+        
+        let update = JSON.stringify(current) !== JSON.stringify(next);
+        return update;
+    }
+    
 
+    render() {
+       // console.log("rendering");
         var { data, ownership } = this.props;
 
         const dropDownMenu = (
